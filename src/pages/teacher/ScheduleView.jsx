@@ -95,9 +95,13 @@ export function ScheduleView() {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-        {filteredSchedules.map((cls) => {
+      {filteredSchedules.length === 0 ? (
+        <p className="py-10 text-center text-sm text-slate-400">
+          No available classes on this day.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {filteredSchedules.map((cls) => {
           const isSelected = activeSession?.session_id === cls.session_id;
           const isLive = isSelected && sessionStatus === 'ACTIVE';
 
@@ -164,8 +168,9 @@ export function ScheduleView() {
               </div>
             </div>
           );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }

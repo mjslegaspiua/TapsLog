@@ -74,12 +74,20 @@ export const MADALIPAY_TEACHER = AUTHORIZED_FACULTY[0];
 export const MOCK_TEACHER = AUTHORIZED_FACULTY[0];
 
 // ─── Enrolled Students Database ──────────────────────────────────────────────
+export const MOCK_STUDENT_SECTIONS = [
+  'BSIT - WMD 3A',
+  'BSIT - WMD 3B',
+  'BSIT - DA 3A',
+  'BSIT - DA 3B',
+];
+
 export const ENROLLED_STUDENTS = [
   {
     student_id: '2023-10492',
     card_uid: 'NFC-8A2F-1101',
     name: 'Juan dela Cruz',
     program: 'BSIT-3A',
+    section: 'BSIT - WMD 3A',
     email: 'j.delacruz@student.school.edu',
     year: '3rd Year',
     attendance_rate: 96,
@@ -90,6 +98,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-9B3C-2202',
     name: 'Maria Santos',
     program: 'BSIT-3A',
+    section: 'BSIT - WMD 3A',
     email: 'm.santos@student.school.edu',
     year: '3rd Year',
     attendance_rate: 94,
@@ -100,6 +109,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-1C4D-3303',
     name: 'Carlo Reyes',
     program: 'BSIT-3A',
+    section: 'BSIT - WMD 3B',
     email: 'c.reyes@student.school.edu',
     year: '3rd Year',
     attendance_rate: 89,
@@ -110,6 +120,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-2D5E-4404',
     name: 'Ana Gonzalez',
     program: 'BSIT-3A',
+    section: 'BSIT - WMD 3B',
     email: 'a.gonzalez@student.school.edu',
     year: '3rd Year',
     attendance_rate: 98,
@@ -120,6 +131,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-3E6F-5505',
     name: 'Miguel Torres',
     program: 'BSIT-3A',
+    section: 'BSIT - DA 3A',
     email: 'm.torres@student.school.edu',
     year: '3rd Year',
     attendance_rate: 85,
@@ -130,6 +142,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-4F7G-6606',
     name: 'Sofia Lim',
     program: 'BSIT-3A',
+    section: 'BSIT - DA 3A',
     email: 's.lim@student.school.edu',
     year: '3rd Year',
     attendance_rate: 92,
@@ -140,6 +153,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-5G8H-7707',
     name: 'Rafael Bautista',
     program: 'BSIT-3A',
+    section: 'BSIT - DA 3B',
     email: 'r.bautista@student.school.edu',
     year: '3rd Year',
     attendance_rate: 91,
@@ -150,6 +164,7 @@ export const ENROLLED_STUDENTS = [
     card_uid: 'NFC-6H9I-8808',
     name: 'Isabella Cruz',
     program: 'BSIT-3A',
+    section: 'BSIT - DA 3B',
     email: 'i.cruz@student.school.edu',
     year: '3rd Year',
     attendance_rate: 97,
