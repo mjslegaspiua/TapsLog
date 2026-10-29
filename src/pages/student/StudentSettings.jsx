@@ -3,18 +3,39 @@
  */
 import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Settings, Bell, Volume2, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
+
+function getPreferenceKey(user) {
+  return `tapslog_student_preferences_${user?.student_id || user?.id || user?.name || 'student'}`;
+}
+
+function readPreferences(user) {
+  const prefix = getPreferenceKey(user);
+  return {
+    classAlerts: localStorage.getItem(`${prefix}_classAlerts`) !== 'false',
+    reminderMinutes: localStorage.getItem(`${prefix}_reminderMinutes`) || '10',
+    soundAlerts: localStorage.getItem(`${prefix}_soundAlerts`) !== 'false',
+  };
+}
 
 export function StudentSettings() {
+  const user = useAppStore((s) => s.user);
   const clearUser = useAppStore((s) => s.clearUser);
   const addToast = useAppStore((s) => s.addToast);
-
-  const [soundAlerts, setSoundAlerts] = useState(true);
-  const [classAlerts, setClassAlerts] = useState(true);
+  const [preferences, setPreferences] = useState(() => readPreferences(user));
 
   const handleSave = (e) => {
     e.preventDefault();
-    addToast({ message: 'Preferences saved', type: 'success' });
+    const prefix = getPreferenceKey(user);
+    try {
+      localStorage.setItem(`${prefix}_classAlerts`, String(preferences.classAlerts));
+      localStorage.setItem(`${prefix}_reminderMinutes`, preferences.reminderMinutes);
+      localStorage.setItem(`${prefix}_soundAlerts`, String(preferences.soundAlerts));
+      addToast({ message: 'Preferences saved', type: 'success' });
+    } catch (error) {
+      console.error('[StudentSettings] Unable to save preferences:', error);
+      addToast({ message: 'Unable to save preferences. Please try again.', type: 'error' });
+    }
   };
 
   return (
@@ -34,15 +55,33 @@ export function StudentSettings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-800">Class Reminders</p>
-              <p className="text-[11px] text-slate-400">Notify 10 mins before class starts</p>
+              <p className="text-[11px] text-slate-400">Remind me about my next scheduled class</p>
             </div>
             <input
               type="checkbox"
-              checked={classAlerts}
-              onChange={(e) => setClassAlerts(e.target.checked)}
+              checked={preferences.classAlerts}
+              onChange={(e) => setPreferences((current) => ({ ...current, classAlerts: e.target.checked }))}
               className="w-4 h-4 text-brand-600 rounded"
             />
           </div>
+
+          {preferences.classAlerts && (
+            <label className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <span>
+                <span className="block text-xs font-semibold text-slate-800">Remind me before class</span>
+                <span className="block text-[11px] text-slate-400">Choose how many minutes ahead</span>
+              </span>
+              <select
+                value={preferences.reminderMinutes}
+                onChange={(e) => setPreferences((current) => ({ ...current, reminderMinutes: e.target.value }))}
+                className="input-field w-auto min-w-32 text-xs"
+              >
+                {[5, 10, 15, 30, 45, 60].map((minutes) => (
+                  <option key={minutes} value={minutes}>{minutes} minutes</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <div>
@@ -51,8 +90,8 @@ export function StudentSettings() {
             </div>
             <input
               type="checkbox"
-              checked={soundAlerts}
-              onChange={(e) => setSoundAlerts(e.target.checked)}
+              checked={preferences.soundAlerts}
+              onChange={(e) => setPreferences((current) => ({ ...current, soundAlerts: e.target.checked }))}
               className="w-4 h-4 text-brand-600 rounded"
             />
           </div>

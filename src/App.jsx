@@ -8,6 +8,7 @@ import { MobileLayout } from './components/mobile/MobileLayout';
 import { DesktopLayout } from './components/desktop/DesktopLayout';
 import { ToastContainer } from './components/shared/ToastContainer';
 import { TapFeedbackOverlay } from './components/shared/TapFeedbackOverlay';
+import { StudentClassReminder } from './components/shared/StudentClassReminder';
 import { AuthModal } from './components/auth/AuthModal';
 import { useSocket } from './hooks/useSocket';
 import { useAppStore } from './store/useAppStore';
@@ -26,11 +27,12 @@ import { ScanLine } from 'lucide-react';
 let _mockTickerRef = null;
 let _mockScanIndex = 6;
 
-function startMockTicker(addScanEvent, setTapFeedback, addToast) {
+function startMockTicker(addScanEvent, addAttendanceNotification, setTapFeedback, addToast) {
   if (_mockTickerRef) return;
   _mockTickerRef = setInterval(() => {
     const event = makeMockScanEvent(_mockScanIndex++);
     addScanEvent(event);
+    addAttendanceNotification(event);
     const isLate = event.status === 'LATE';
     setTapFeedback(isLate ? 'warning' : 'success');
     playBeep(isLate ? 'warning' : 'success');
@@ -58,6 +60,7 @@ function AppInner() {
   const activeSession = useAppStore((s) => s.activeSession);
   const sessionStatus = useAppStore((s) => s.sessionStatus);
   const addScanEvent = useAppStore((s) => s.addScanEvent);
+  const addAttendanceNotification = useAppStore((s) => s.addAttendanceNotification);
   const setTapFeedback = useAppStore((s) => s.setTapFeedback);
   const addToast = useAppStore((s) => s.addToast);
 
@@ -67,16 +70,17 @@ function AppInner() {
   // Live mock ticker only runs for teachers when session is active
   useEffect(() => {
     if (isMockActive() && sessionStatus === 'ACTIVE' && user?.role === 'teacher') {
-      startMockTicker(addScanEvent, setTapFeedback, addToast);
+      startMockTicker(addScanEvent, addAttendanceNotification, setTapFeedback, addToast);
     } else {
       stopMockTicker();
     }
     return () => stopMockTicker();
-  }, [sessionStatus, user?.role]);
+  }, [sessionStatus, user?.role, addAttendanceNotification, addScanEvent, setTapFeedback, addToast]);
 
   return (
     <>
       {isMobile ? <MobileLayout /> : <DesktopLayout />}
+      <StudentClassReminder />
       <ToastContainer />
       <TapFeedbackOverlay />
     </>

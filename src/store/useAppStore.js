@@ -20,6 +20,7 @@ export const useAppStore = create((set, get) => ({
       studentView: 'livetime',
       activeSession: null,
       sessionStatus: 'IDLE',
+      notifications: [],
     });
   },
 
@@ -113,6 +114,57 @@ export const useAppStore = create((set, get) => ({
 
   removeToast: (id) =>
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+
+  notifications: [],
+  addNotification: ({ id, message, type = 'info', createdAt = new Date().toISOString() }) =>
+    set((state) => {
+      if (id && state.notifications.some((notification) => notification.id === id)) return state;
+
+      const notificationId = id || `notification-${Date.now()}`;
+      return {
+        notifications: [
+          { id: notificationId, message, type, createdAt, read: false },
+          ...state.notifications,
+        ].slice(0, 50),
+      };
+    }),
+  addAttendanceNotification: (event) => {
+    const user = get().user;
+    const studentName = event.student || event.student_name || 'A student';
+    const status = (event.status || event.action || 'updated').toString().toLowerCase().replaceAll('_', ' ');
+    const belongsToStudent = user?.role === 'student' && (
+      event.student === user.name || event.card_uid === user.card_uid
+    );
+
+    if (user?.role === 'teacher') {
+      get().addNotification({
+        id: event.event_id || event.id,
+        message: `${studentName} — ${status}`,
+        type: status.includes('late') ? 'warning' : 'success',
+        createdAt: event.scanned_at || new Date().toISOString(),
+      });
+    } else if (belongsToStudent) {
+      get().addNotification({
+        id: event.event_id || event.id,
+        message: `Your attendance was marked ${status}`,
+        type: status.includes('late') ? 'warning' : 'success',
+        createdAt: event.scanned_at || new Date().toISOString(),
+      });
+    }
+  },
+  markNotificationRead: (id) =>
+    set((state) => ({
+      notifications: state.notifications.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification
+      ),
+    })),
+  markAllNotificationsRead: () =>
+    set((state) => ({
+      notifications: state.notifications.map((notification) => ({ ...notification, read: true })),
+    })),
+  clearNotifications: () => set({ notifications: [] }),
+  isNotificationPanelOpen: false,
+  setNotificationPanelOpen: (isOpen) => set({ isNotificationPanelOpen: isOpen }),
 
   // ─── UI State ─────────────────────────────────────────────────────────────
   sidebarCollapsed: false,

@@ -18,7 +18,7 @@ export function StudentSchedule() {
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-4xl mx-auto h-full overflow-y-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="sticky -top-4 z-30 -mx-4 -mt-4 flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 pb-3 pt-4 sm:-top-6 sm:-mx-6 sm:-mt-6 sm:flex-row sm:items-center sm:px-6">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-blue-100 text-brand-700 flex items-center justify-center shrink-0">
             <Calendar className="w-4 h-4" />
@@ -56,38 +56,36 @@ export function StudentSchedule() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {filteredSchedules.map((item) => (
-          <div key={item.session_id} className="card p-4 space-y-2.5 hover:border-slate-300 transition-all">
+          <div key={item.session_id} className="card space-y-2.5 p-4 transition-all hover:border-slate-300">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-brand-700 border border-blue-100">
+              <span className="rounded border border-blue-100 bg-blue-50 px-2 py-0.5 font-mono text-[10px] font-bold text-brand-700">
                 {item.code}
               </span>
-              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                 {item.day_of_week}
               </span>
             </div>
-
             <div>
               <h3 className="text-xs font-bold text-slate-900">{item.subject}</h3>
               <p className="text-[11px] text-slate-500">{item.section}</p>
             </div>
-
-            <div className="space-y-1 text-xs text-slate-500 pt-1 border-t border-slate-100">
+            <div className="space-y-1 border-t border-slate-100 pt-1 text-xs text-slate-500">
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-brand-600" />
+                <Calendar className="h-3.5 w-3.5 text-brand-600" />
                 <span>{item.day_of_week}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-brand-600" />
+                <Clock className="h-3.5 w-3.5 text-brand-600" />
                 <span>{item.start_time} – {item.end_time}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-brand-600" />
+                <MapPin className="h-3.5 w-3.5 text-brand-600" />
                 <span>{item.room}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-brand-600" />
+                <User className="h-3.5 w-3.5 text-brand-600" />
                 <span>{item.instructor}</span>
               </div>
             </div>
@@ -98,9 +96,6 @@ export function StudentSchedule() {
         <p className="text-center text-xs text-slate-400">
           No classes are listed for {selectedDay}.
         </p>
-      )}
-      {selectedDay === 'ALL' && (
-        <p className="text-center text-xs text-slate-400">No classes are listed for Saturday or Sunday.</p>
       )}
     </div>
   );

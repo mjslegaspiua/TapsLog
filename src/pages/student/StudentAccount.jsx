@@ -51,20 +51,25 @@ export function StudentAccount() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="card p-3 text-center border-emerald-100 bg-emerald-50/40">
-          <p className="text-2xl font-bold text-emerald-700">{user?.attendance_rate || 96}%</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Attendance</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="card min-h-28 p-5 text-center border-emerald-200 bg-emerald-100/70 shadow-sm flex flex-col justify-center">
+          <p className="text-3xl font-bold text-emerald-700">{user?.attendance_rate || 96}%</p>
+          <p className="text-xs text-slate-500 mt-1">Attendance</p>
         </div>
 
-        <div className="card p-3 text-center border-blue-100 bg-blue-50/40">
-          <p className="text-2xl font-bold text-brand-700">42</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Classes Attended</p>
+        <div className="card min-h-28 p-5 text-center border-blue-200 bg-blue-100/70 shadow-sm flex flex-col justify-center">
+          <p className="text-3xl font-bold text-brand-700">42</p>
+          <p className="text-xs text-slate-500 mt-1">Classes Attended</p>
         </div>
 
-        <div className="card p-3 text-center border-amber-100 bg-amber-50/40">
-          <p className="text-2xl font-bold text-amber-700">2</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Late Taps</p>
+        <div className="card min-h-28 p-5 text-center border-amber-200 bg-amber-100/70 shadow-sm flex flex-col justify-center">
+          <p className="text-3xl font-bold text-amber-700">2</p>
+          <p className="text-xs text-slate-500 mt-1">Late Taps</p>
+        </div>
+
+        <div className="card min-h-28 p-5 text-center border-red-200 bg-red-100/70 shadow-sm flex flex-col justify-center">
+          <p className="text-3xl font-bold text-red-700">{user?.absences ?? 0}</p>
+          <p className="text-xs text-slate-500 mt-1">Absences</p>
         </div>
       </div>
     </div>

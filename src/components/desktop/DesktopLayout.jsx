@@ -14,10 +14,10 @@ import {
   ChevronRight,
   Activity,
   LogOut,
-  Bell,
   Clock,
   IdCard,
 } from 'lucide-react';
+import { NotificationBell } from '../shared/NotificationBell';
 
 // Teacher Views
 import { AttendanceStream } from '../../pages/desktop/AttendanceStream';
@@ -211,9 +211,7 @@ export function DesktopLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-              <Bell className="w-4 h-4" />
-            </button>
+            <NotificationBell />
           </div>
         </header>
 

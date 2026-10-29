@@ -8,6 +8,7 @@ import { playBeep } from '../lib/utils';
 
 export function useSocket(sessionId) {
   const addScanEvent = useAppStore((s) => s.addScanEvent);
+  const addAttendanceNotification = useAppStore((s) => s.addAttendanceNotification);
   const addToast     = useAppStore((s) => s.addToast);
   const setTapFeedback = useAppStore((s) => s.setTapFeedback);
 
@@ -25,6 +26,7 @@ export function useSocket(sessionId) {
 
     socket.on('attendance_event', (event) => {
       addScanEvent(event);
+      addAttendanceNotification(event);
 
       if (event.status === 'PRESENT' || event.action === 'STUDENT_TIME_IN') {
         setTapFeedback('success');
@@ -54,5 +56,5 @@ export function useSocket(sessionId) {
       socket.off('connect_error');
       disconnectSocket();
     };
-  }, [sessionId]);
+  }, [sessionId, addAttendanceNotification, addScanEvent, addToast, setTapFeedback]);
 }

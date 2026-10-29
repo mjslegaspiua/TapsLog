@@ -1,13 +1,39 @@
 /**
  * SessionController — Column 2 of desktop dashboard (Sleek White UI)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAttendance } from '../../hooks/useAttendance';
-import { activateSession, closeSession, triggerAutoAbsent } from '../../api/teacherService';
+import { activateSession, closeSession } from '../../api/teacherService';
 import { StatusBadge } from '../../components/shared/StatusBadge';
-import { formatTime, cn } from '../../lib/utils';
-import { Play, Square, UserX, ScanLine, Loader2, Zap, Clock, BookOpen } from 'lucide-react';
+import { formatTime } from '../../lib/utils';
+import { Play, Square, ScanLine, Loader2, Zap, Clock } from 'lucide-react';
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function parseTime(value) {
+  const match = value?.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === 'PM') hour += 12;
+  return { hour, minute: Number(match[2]) };
+}
+
+function getScheduledClass(classes, now) {
+  const weekday = WEEKDAYS[now.getDay()];
+  return classes.find((cls) => {
+    if (cls.day_of_week !== weekday) return false;
+    const start = parseTime(cls.start_time);
+    const end = parseTime(cls.end_time);
+    if (!start || !end) return false;
+
+    const startMinutes = start.hour * 60 + start.minute;
+    const endMinutes = end.hour * 60 + end.minute;
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }) || null;
+}
 
 export function SessionController() {
   const [manualUID, setManualUID] = useState('');
@@ -19,39 +45,49 @@ export function SessionController() {
   const setActiveSession = useAppStore((s) => s.setActiveSession);
   const sessionStatus = useAppStore((s) => s.sessionStatus);
   const addToast = useAppStore((s) => s.addToast);
+  const addNotification = useAppStore((s) => s.addNotification);
   const lastScan = useAppStore((s) => s.lastScan);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
 
   const { submitScan, loading: scanLoading } = useAttendance();
 
   // STRICT: Teacher only accesses their own subjects
-  const teacherClasses = user?.name && user?.role === 'teacher'
+  const teacherClasses = useMemo(() => user?.name && user?.role === 'teacher'
     ? allSchedules.filter(
         (s) =>
           s.instructor.toLowerCase().includes(user.name.toLowerCase()) ||
           user.name.toLowerCase().includes(s.instructor.toLowerCase())
       )
-    : allSchedules;
+    : allSchedules, [allSchedules, user]);
+  const scheduledClass = useMemo(
+    () => getScheduledClass(teacherClasses, currentTime),
+    [teacherClasses, currentTime]
+  );
+  const sessionClass = sessionStatus === 'ACTIVE' ? activeSession : scheduledClass;
 
-  // Auto-align activeSession to teacher's own class if currently mismatched
   useEffect(() => {
-    if (user?.role === 'teacher' && teacherClasses.length > 0) {
-      const isOwned = activeSession && teacherClasses.some((c) => c.session_id === activeSession.session_id);
-      if (!isOwned) {
-        setActiveSession(teacherClasses[0]);
-      }
+    const interval = setInterval(() => setCurrentTime(new Date()), 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (sessionStatus === 'ACTIVE') return;
+    if (activeSession?.session_id !== scheduledClass?.session_id) {
+      setActiveSession(scheduledClass ? { ...scheduledClass, status: 'PENDING' } : null);
     }
-  }, [user?.role, teacherClasses.length]);
+  }, [activeSession?.session_id, scheduledClass, sessionStatus, setActiveSession]);
 
   const handleActivate = async () => {
-    if (!activeSession?.session_id) return;
+    if (!sessionClass?.session_id) return;
     setActionLoading('activate');
     try {
-      await activateSession(activeSession.session_id);
+      await activateSession(sessionClass.session_id);
       useAppStore.setState({
-        activeSession: { ...activeSession, status: 'ACTIVE' },
+        activeSession: { ...sessionClass, status: 'ACTIVE' },
         sessionStatus: 'ACTIVE',
       });
       addToast({ message: 'Session activated', type: 'success' });
+      addNotification({ message: `${sessionClass.subject} session started`, type: 'success' });
     } catch (err) {
       addToast({ message: err.friendlyMessage || 'Activation failed', type: 'error' });
     } finally {
@@ -60,15 +96,16 @@ export function SessionController() {
   };
 
   const handleClose = async () => {
-    if (!activeSession?.session_id) return;
+    if (!sessionClass?.session_id) return;
     setActionLoading('close');
     try {
-      await closeSession(activeSession.session_id);
+      await closeSession(sessionClass.session_id);
       useAppStore.setState({
-        activeSession: { ...activeSession, status: 'CLOSED' },
+        activeSession: { ...sessionClass, status: 'CLOSED' },
         sessionStatus: 'CLOSED',
       });
       addToast({ message: 'Session closed', type: 'info' });
+      addNotification({ message: `${sessionClass.subject} session ended`, type: 'info' });
     } catch (err) {
       addToast({ message: err.friendlyMessage || 'Close failed', type: 'error' });
     } finally {
@@ -76,24 +113,11 @@ export function SessionController() {
     }
   };
 
-  const handleAutoAbsent = async () => {
-    if (!activeSession?.session_id) return;
-    setActionLoading('absent');
-    try {
-      await triggerAutoAbsent(activeSession.session_id);
-      addToast({ message: 'Auto-absent executed', type: 'info' });
-    } catch (err) {
-      addToast({ message: err.friendlyMessage || 'Action failed', type: 'error' });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleManualScan = async (e) => {
     e.preventDefault();
-    if (!manualUID.trim() || !activeSession?.session_id) return;
+    if (!manualUID.trim() || !sessionClass?.session_id) return;
     try {
-      await submitScan({ session_id: activeSession.session_id, card_uid: manualUID.trim() });
+      await submitScan({ session_id: sessionClass.session_id, card_uid: manualUID.trim() });
       setManualUID('');
     } catch {}
   };
@@ -105,50 +129,24 @@ export function SessionController() {
         <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Session Control</h2>
       </div>
 
-      {/* Teacher's Subject Quick Switcher */}
-      {teacherClasses.length > 1 && (
-        <div className="space-y-1">
-          <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Select Assigned Subject
-          </label>
-          <select
-            value={activeSession?.session_id || ''}
-            onChange={(e) => {
-              const selected = teacherClasses.find((c) => c.session_id === e.target.value);
-              if (selected) {
-                setActiveSession(selected);
-                addToast({ message: `Switched to ${selected.subject}`, type: 'info' });
-              }
-            }}
-            className="input-field text-xs py-1.5 font-medium cursor-pointer bg-white"
-          >
-            {teacherClasses.map((cls) => (
-              <option key={cls.session_id} value={cls.session_id}>
-                {cls.subject} ({cls.day_of_week} {cls.start_time})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {/* Active Session Info */}
-      {activeSession ? (
+      {sessionClass ? (
         <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-900 leading-tight">{activeSession.subject}</p>
-              <p className="text-[11px] text-slate-500">{activeSession.section} · {activeSession.room}</p>
+              <p className="text-xs font-bold text-slate-900 leading-tight">{sessionClass.subject}</p>
+              <p className="text-[11px] text-slate-500">{sessionClass.section} · {sessionClass.room}</p>
             </div>
-            <StatusBadge status={sessionStatus === 'ACTIVE' ? 'ACTIVE' : activeSession.status} />
+            <StatusBadge status={sessionStatus === 'ACTIVE' ? 'ACTIVE' : sessionClass.status} />
           </div>
           <p className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {activeSession.start_time} – {activeSession.end_time}
+            {sessionClass.start_time} – {sessionClass.end_time}
           </p>
         </div>
       ) : (
         <div className="p-4 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl text-xs">
-          Select class from schedule
+          No class is scheduled for this time.
         </div>
       )}
 
@@ -157,7 +155,7 @@ export function SessionController() {
         {sessionStatus !== 'ACTIVE' ? (
           <button
             onClick={handleActivate}
-            disabled={!activeSession || actionLoading === 'activate'}
+            disabled={!sessionClass || actionLoading === 'activate'}
             className="btn-primary w-full text-xs font-semibold py-2.5"
           >
             {actionLoading === 'activate' ? (
@@ -180,17 +178,6 @@ export function SessionController() {
           </button>
         )}
 
-        <button
-          onClick={handleAutoAbsent}
-          disabled={!activeSession || actionLoading === 'absent'}
-          className="w-full flex items-center gap-1.5 justify-center px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all"
-        >
-          {actionLoading === 'absent' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <><UserX className="w-3.5 h-3.5" /> Auto-Absent Unchecked</>
-          )}
-        </button>
       </div>
 
       {/* Last Tap */}

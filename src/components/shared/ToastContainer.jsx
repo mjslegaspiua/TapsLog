@@ -29,6 +29,9 @@ const ICONS = {
 export function ToastContainer() {
   const toasts      = useAppStore((s) => s.toasts);
   const removeToast = useAppStore((s) => s.removeToast);
+  const isNotificationPanelOpen = useAppStore((s) => s.isNotificationPanelOpen);
+
+  if (isNotificationPanelOpen) return null;
 
   return (
     <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-[calc(100%-2rem)] sm:w-full pointer-events-none">

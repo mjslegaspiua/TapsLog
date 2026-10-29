@@ -9,6 +9,7 @@ import { playBeep } from '../lib/utils';
 export function useAttendance() {
   const [loading, setLoading]   = useState(false);
   const addScanEvent             = useAppStore((s) => s.addScanEvent);
+  const addAttendanceNotification = useAppStore((s) => s.addAttendanceNotification);
   const addToast                 = useAppStore((s) => s.addToast);
   const setTapFeedback           = useAppStore((s) => s.setTapFeedback);
 
@@ -16,7 +17,9 @@ export function useAttendance() {
     setLoading(true);
     try {
       const result = await scanCard({ session_id, card_uid });
-      addScanEvent({ ...result, scanned_at: result.scanned_at || new Date().toISOString() });
+      const scanEvent = { ...result, scanned_at: result.scanned_at || new Date().toISOString() };
+      addScanEvent(scanEvent);
+      addAttendanceNotification(scanEvent);
 
       if (result.status === 'PRESENT') {
         addToast({ message: `✅ ${result.student} — Time In (PRESENT)`, type: 'success' });
